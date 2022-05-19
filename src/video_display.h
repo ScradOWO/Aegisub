@@ -63,7 +63,7 @@ class VideoDisplay final : public wxGLCanvas {
 
 	const agi::OptionValue* autohideTools;
 
-	agi::Context *con;
+	agi::Context* con;
 
 	std::unique_ptr<wxMenu> context_menu;
 
@@ -84,8 +84,19 @@ class VideoDisplay final : public wxGLCanvas {
 	/// The height of the video in screen pixels
 	int viewport_height = 0;
 
-	/// The current zoom level, where 1.0 = 100%
-	double zoomValue;
+	/// The current window zoom level, where 1.0 = 100%
+	double windowZoomValue;
+	/// The current video zoom level, where 1.0 = 100% relative to the display window size
+	double videoZoomValue;
+
+	/// The last position of the mouse, when dragging
+	Vector2D pan_last_pos;
+	/// True if middle mouse button is down, and we should update pan_{x,y}
+	bool panning = false;
+	/// The current video pan offset width
+	int pan_x = 0;
+	/// The current video pan offset height
+	int pan_y = 0;
 
 	/// The video renderer
 	std::unique_ptr<VideoOutGL> videoOut;
@@ -99,7 +110,7 @@ class VideoDisplay final : public wxGLCanvas {
 	std::unique_ptr<wxGLContext> glContext;
 
 	/// The dropdown box for selecting zoom levels
-	wxComboBox *zoomBox;
+	wxComboBox* zoomBox;
 
 	/// Whether the display can be freely resized by the user
 	bool freeSize;
@@ -110,8 +121,6 @@ class VideoDisplay final : public wxGLCanvas {
 	std::unique_ptr<RetinaHelper> retina_helper;
 	int scale_factor;
 	agi::signal::Connection scale_factor_connection;
-
-	bool render_requested;
 
 	/// @brief Draw an overscan mask
 	/// @param horizontal_percent The percent of the video reserved horizontally
@@ -134,25 +143,23 @@ class VideoDisplay final : public wxGLCanvas {
 	void SetZoomFromBoxText(wxCommandEvent&);
 
 	/// @brief Key event handler
-	void OnKeyDown(wxKeyEvent &event);
+	void OnKeyDown(wxKeyEvent& event);
 	/// @brief Mouse event handler
 	void OnMouseEvent(wxMouseEvent& event);
 	void OnMouseWheel(wxMouseEvent& event);
 	void OnMouseLeave(wxMouseEvent& event);
 	/// @brief Recalculate video positioning and scaling when the available area or zoom changes
-	void OnSizeEvent(wxSizeEvent &event);
+	void OnSizeEvent(wxSizeEvent& event);
 	void OnContextMenu(wxContextMenuEvent&);
-	void OnIdle(wxIdleEvent&);
-	void DoRender();
 
 public:
 	/// @brief Constructor
 	VideoDisplay(
-		wxToolBar *visualSubToolBar,
+		wxToolBar* visualSubToolBar,
 		bool isDetached,
-		wxComboBox *zoomBox,
+		wxComboBox* zoomBox,
 		wxWindow* parent,
-		agi::Context *context);
+		agi::Context* context);
 	~VideoDisplay();
 
 	/// @brief Render the currently visible frame
@@ -160,9 +167,13 @@ public:
 
 	/// @brief Set the zoom level
 	/// @param value The new zoom level
-	void SetZoom(double value);
+	void SetWindowZoom(double value);
+	void SetVideoZoom(int step);
 	/// @brief Get the current zoom level
-	double GetZoom() const { return zoomValue; }
+	double GetZoom() const { return windowZoomValue; }
+
+	/// @brief Reset the video pan
+	void ResetPan();
 
 	/// Get the last seen position of the mouse in script coordinates
 	Vector2D GetMousePosition() const;

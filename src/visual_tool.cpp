@@ -132,6 +132,10 @@ AssDialogue* VisualToolBase::GetActiveDialogueLine() {
 	return nullptr;
 }
 
+void VisualToolBase::SetClientSize(int w, int h) {
+	client_size = Vector2D(w, h);
+}
+
 void VisualToolBase::SetDisplayArea(int x, int y, int w, int h) {
 	if (x == video_pos.X() && y == video_pos.Y() && w == video_res.X() && h == video_res.Y()) return;
 
@@ -168,6 +172,8 @@ void VisualTool<FeatureType>::OnMouseEvent(wxMouseEvent &event) {
 	alt_down = event.AltDown();
 
 	mouse_pos = event.GetPosition();
+
+	mouse_pos = Vector2D(mouse_pos.X(), mouse_pos.Y());
 
 	if (event.Leaving()) {
 		mouse_pos = Vector2D();

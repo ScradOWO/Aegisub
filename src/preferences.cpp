@@ -94,7 +94,7 @@ void General_DefaultStyles(wxTreebook *book, Preferences *parent) {
 	instructions->Wrap(400);
 	staticbox->Add(instructions, 0, wxALL, 5);
 	staticbox->AddSpacer(16);
-	
+
 	auto general = new wxFlexGridSizer(2, 5, 5);
 	general->AddGrowableCol(0, 1);
 	staticbox->Add(general, 1, wxEXPAND, 5);
@@ -130,10 +130,12 @@ void Audio(wxTreebook *book, Preferences *parent) {
 	auto general = p->PageSizer(_("Options"));
 	p->OptionAdd(general, _("Default mouse wheel to zoom"), "Audio/Wheel Default to Zoom");
 	p->OptionAdd(general, _("Lock scroll on cursor"), "Audio/Lock Scroll on Cursor");
+	p->OptionAdd(general, _("Smooth scrolling"), "Audio/Smooth Scrolling");
 	p->OptionAdd(general, _("Snap markers by default"), "Audio/Snap/Enable");
 	p->OptionAdd(general, _("Auto-focus on mouse over"), "Audio/Auto/Focus");
 	p->OptionAdd(general, _("Play audio when stepping in video"), "Audio/Plays When Stepping Video");
 	p->OptionAdd(general, _("Left-click-drag moves end marker"), "Audio/Drag Timing");
+	p->CellSkip(general);
 	p->OptionAdd(general, _("Default timing length (ms)"), "Timing/Default Duration", 0, 36000);
 	p->OptionAdd(general, _("Default lead-in length (ms)"), "Audio/Lead/IN", 0, 36000);
 	p->OptionAdd(general, _("Default lead-out length (ms)"), "Audio/Lead/OUT", 0, 36000);
@@ -207,17 +209,10 @@ void Interface(wxTreebook *book, Preferences *parent) {
 	auto p = new OptionPage(book, parent, _("Interface"));
 
 	auto edit_box = p->PageSizer(_("Edit Box"));
-#ifdef WITH_WXSTC
 	p->OptionAdd(edit_box, _("Use styled edit box"), "Subtitle/Use STC");
 	p->OptionAdd(edit_box, _("Enable call tips"), "App/Call Tips");
-#endif
 	p->OptionAdd(edit_box, _("Overwrite in time boxes"), "Subtitle/Time Edit/Insert Mode");
-#ifdef WITH_WXSTC
 	p->OptionAdd(edit_box, _("Enable syntax highlighting"), "Subtitle/Highlight/Syntax");
-#else
-	// Pad number of options to even
-	p->CellSkip(edit_box);
-#endif
 	p->OptionBrowse(edit_box, _("Dictionaries path"), "Path/Dictionary");
 	p->OptionFont(edit_box, "Subtitle/Edit Box/");
 
@@ -261,7 +256,6 @@ void Interface_Colours(wxTreebook *book, Preferences *parent) {
 	auto syntax = p->PageSizer(_("Syntax Highlighting"));
 	p->OptionAdd(syntax, _("Background"), "Colour/Subtitle/Background");
 	p->OptionAdd(syntax, _("Normal"), "Colour/Subtitle/Syntax/Normal");
-#ifdef WITH_WXSTC
 	p->OptionAdd(syntax, _("Comments"), "Colour/Subtitle/Syntax/Comment");
 	p->OptionAdd(syntax, _("Drawings"), "Colour/Subtitle/Syntax/Drawing");
 	p->OptionAdd(syntax, _("Brackets"), "Colour/Subtitle/Syntax/Brackets");
@@ -273,7 +267,6 @@ void Interface_Colours(wxTreebook *book, Preferences *parent) {
 	p->OptionAdd(syntax, _("Line Break"), "Colour/Subtitle/Syntax/Line Break");
 	p->OptionAdd(syntax, _("Karaoke templates"), "Colour/Subtitle/Syntax/Karaoke Template");
 	p->OptionAdd(syntax, _("Karaoke variables"), "Colour/Subtitle/Syntax/Karaoke Variable");
-#endif
 
 	p->sizer = new wxBoxSizer(wxVERTICAL);
 	main_sizer->AddSpacer(5);
@@ -370,6 +363,15 @@ void Advanced(wxTreebook *book, Preferences *parent) {
 	p->SetSizerAndFit(p->sizer);
 }
 
+void Experiments(wxTreebook* book, Preferences* parent) {
+	auto p = new OptionPage(book, parent, _("Experiments"), OptionPage::PAGE_SUB);
+
+	auto general = p->PageSizer(_("Experiments"));
+	p->OptionAdd(general, _("Video Panning"), "Experiments/Video Pan");
+
+	p->SetSizerAndFit(p->sizer);
+}
+
 /// Advanced Audio preferences subpage
 void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	auto p = new OptionPage(book, parent, _("Audio"), OptionPage::PAGE_SUB);
@@ -383,7 +385,7 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	p->OptionChoice(expert, _("Audio player"), apl_choice, "Audio/Player");
 
 	auto cache = p->PageSizer(_("Cache"));
-	const wxString ct_arr[3] = { _("None (Not recommended with Avisynth)"), _("RAM"), _("Hard Disk") };
+	const wxString ct_arr[3] = { _("None (NOT RECOMMENDED)"), _("RAM"), _("Hard Disk") };
 	wxArrayString ct_choice(3, ct_arr);
 	p->OptionChoice(cache, _("Cache type"), ct_choice, "Audio/Cache/Type");
 	p->OptionBrowse(cache, _("Path"), "Audio/Cache/HD/Location");
@@ -412,7 +414,8 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	p->OptionChoice(ffms, _("Audio indexing error handling mode"), error_modes_choice, "Provider/Audio/FFmpegSource/Decode Error Handling");
 
 	p->OptionAdd(ffms, _("Always index all audio tracks"), "Provider/FFmpegSource/Index All Tracks");
-	p->OptionAdd(ffms, _("Downmix to 16bit mono audio"), "Provider/Audio/FFmpegSource/Downmix");
+	wxControl* stereo = p->OptionAdd(ffms, _("Downmix to stereo"), "Provider/Audio/FFmpegSource/Downmix");
+	stereo->SetToolTip("Reduces memory usage on surround audio, but may cause audio tracks to sound blank in specific circumstances.\nThis will not affect audio with 2 channels or fewer.");
 #endif
 
 #ifdef WITH_PORTAUDIO
@@ -729,6 +732,7 @@ Preferences::Preferences(wxWindow *parent): wxDialog(parent, -1, _("Preferences"
 	Advanced(book, this);
 	Advanced_Audio(book, this);
 	Advanced_Video(book, this);
+	Experiments(book, this);
 
 	book->Fit();
 
